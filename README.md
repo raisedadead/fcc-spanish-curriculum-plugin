@@ -1,3 +1,7 @@
+> [!CAUTION]
+>
+> This project is WIP. Avoid using or contributing until the initial release.
+
 # fCC AI Marketplace
 
 A public marketplace of AI-powered plugins, skills, and agents for freeCodeCamp.
