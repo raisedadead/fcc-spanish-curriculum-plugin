@@ -1,0 +1,34 @@
+# fCC AI Marketplace
+
+Public repository of modular plugins and skills for freeCodeCamp staff and maintainers.
+
+## Repository Layout
+
+- `plugins/` — Claude Code plugins (each with `.claude-plugin/plugin.json`, skills, hooks, agents, MCP config)
+- `skills/` — Standalone portable skills (not plugin-bound)
+- `agents/` — Shared agent definitions
+- `templates/` — Scaffolding for new plugins and skills
+
+## Plugin Conventions
+
+Each plugin lives in `plugins/<name>/` and contains a `.claude-plugin/plugin.json` manifest. Skills inside plugins follow the Agent Skills standard: each skill is a `SKILL.md` file with `name` and `description` YAML frontmatter. Agents, hooks, and MCP server configs are plugin-specific.
+
+## Installation
+
+- **Portable skills** (any compatible tool): `npx skills add freeCodeCamp/fCC-AI-Marketplace`
+- **Full plugin** (Claude Code only): `claude --plugin-dir ./plugins/<name>`
+
+## Cross-Tool Compatibility
+
+SKILL.md files follow the Agent Skills standard (agentskills.io) and are portable across Claude Code, Codex CLI, OpenCode, and Gemini CLI. Rich features — hooks, MCP servers, static agents — are Claude Code-specific and defined in the plugin manifest.
+
+## Validation
+
+Run `./validate.sh` to check plugin and skill structural correctness.
+
+## Design Decisions
+
+- Skills are the unit of portability; plugins are the unit of distribution for Claude Code
+- SKILL.md frontmatter (`name`, `description`) is the minimum contract for cross-tool discovery
+- Plugin-level hooks run automatically (e.g., task validation on file write) and are not portable
+- One plugin per workflow domain — avoid monolith plugins that bundle unrelated concerns
