@@ -1,7 +1,3 @@
-> [!CAUTION]
->
-> This project is WIP. Avoid using or contributing until the initial release.
-
 # fCC AI Marketplace
 
 A public marketplace of AI-powered plugins, skills, and agents for freeCodeCamp.
@@ -36,15 +32,16 @@ claude --plugin-dir ./plugins/<plugin-name>
 
 ## Catalog: Skills
 
-| Skill                              | Description                                                                                 | Status |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- | ------ |
-| [hello-world](skills/hello-world/) | Sample skill that responds with a friendly greeting and explains how the marketplace works. | Sample |
+| Skill                                                | Description                                                                                           | Status    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
+| [hello-world](skills/hello-world/)                   | Reference skill demonstrating every SKILL.md section and pattern. Use as a template and test fixture. | Reference |
+| [sync-issue-templates](skills/sync-issue-templates/) | Sync GitHub issue templates from an org's .github repo into the current repository.                   | Active    |
 
 ## Catalog: Agents
 
-| Agent                                | Description                                                                         | Status |
-| ------------------------------------ | ----------------------------------------------------------------------------------- | ------ |
-| [hello-world](agents/hello-world.md) | Sample agent that demonstrates the agent definition format used in the marketplace. | Sample |
+| Agent                                | Description                                                | Status    |
+| ------------------------------------ | ---------------------------------------------------------- | --------- |
+| [hello-world](agents/hello-world.md) | Reference agent demonstrating the agent definition format. | Reference |
 
 ## Supported Tools
 
@@ -55,9 +52,34 @@ claude --plugin-dir ./plugins/<plugin-name>
 | OpenCode    | Yes    | No           |
 | Gemini CLI  | Yes    | No           |
 
+## Development
+
+### Prerequisites
+
+- Node.js >= 22
+- pnpm
+
+### Setup
+
+```sh
+pnpm install
+```
+
+### Commands
+
+| Command                 | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| `pnpm run validate`     | Check plugin and skill structural correctness       |
+| `pnpm run test`         | Run tests                                           |
+| `pnpm run lint`         | Run linter                                          |
+| `pnpm run format`       | Format code                                         |
+| `pnpm run format:check` | Check formatting                                    |
+| `pnpm run scaffold`     | Interactively create a new plugin or skill          |
+| `pnpm turbo check`      | Full quality gate (validate + test + lint + format) |
+
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on creating plugins, skills, and agents, including naming rules, the SKILL.md format, plugin structure, and PR expectations. Run `./validate.sh` before submitting a pull request.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on creating plugins, skills, and agents, including naming rules, the SKILL.md format, plugin structure, and PR expectations. Run `pnpm turbo check` before submitting a pull request.
 
 ## License
 

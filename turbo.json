@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "validate": {},
+    "test": {},
+    "lint": {},
+    "format": {},
+    "format:check": {},
+    "check": {
+      "dependsOn": ["validate", "test", "lint", "format:check"]
+    }
+  }
+}

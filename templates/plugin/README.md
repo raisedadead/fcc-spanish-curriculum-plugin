@@ -4,9 +4,9 @@ Short description of what this plugin does and the problem it solves.
 
 ## Skills
 
-| Skill             | Command          | Description                    |
-| ----------------- | ---------------- | ------------------------------ |
-| **Example Skill** | `/example-skill` | Brief description of the skill |
+| Skill           | Command        | Description                    |
+| --------------- | -------------- | ------------------------------ |
+| **Plugin Name** | `/plugin-name` | Brief description of the skill |
 
 ## Installation
 
@@ -35,7 +35,7 @@ claude --plugin-dir ./plugins/plugin-name
 ### Basic usage
 
 ```text
-/example-skill — describe what happens when invoked
+/plugin-name — describe what happens when invoked
 ```
 
 ### Examples

@@ -22,9 +22,18 @@ Each plugin lives in `plugins/<name>/` and contains a `.claude-plugin/plugin.jso
 
 SKILL.md files follow the Agent Skills standard (agentskills.io) and are portable across Claude Code, Codex CLI, OpenCode, and Gemini CLI. Rich features — hooks, MCP servers, static agents — are Claude Code-specific and defined in the plugin manifest.
 
-## Validation
+## Toolchain
 
-Run `./validate.sh` to check plugin and skill structural correctness.
+TypeScript-based toolchain using pnpm, vitest (tests), turbo (task orchestration), and oxlint (linting).
+
+Key commands:
+
+- `pnpm run validate` — check plugin and skill structural correctness
+- `pnpm run scaffold` — interactively create new plugins or skills
+- `pnpm run test` — run tests
+- `pnpm run lint` — run linter
+- `pnpm run format:check` — check formatting
+- `pnpm turbo check` — full quality gate (validate + test + lint + format)
 
 ## Design Decisions
 

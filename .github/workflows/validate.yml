@@ -1,4 +1,4 @@
-name: Validate Marketplace Structure
+name: Check Marketplace
 
 on:
   push:
@@ -10,14 +10,18 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Ensure jq is available
-        run: command -v jq || (sudo apt-get update -qq && sudo apt-get install -y jq)
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      # validate.sh must be committed with the executable bit set
-      - name: Run validation
-        run: ./validate.sh
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: "package.json"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm turbo check

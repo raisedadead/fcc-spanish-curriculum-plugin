@@ -10,7 +10,13 @@ Key concepts:
 
 ## Quick Start: Creating a Plugin
 
-1. Copy the plugin template to a new directory:
+1. Create a new plugin interactively:
+
+```sh
+pnpm run scaffold
+```
+
+Or copy the plugin template manually:
 
 ```sh
 cp -r templates/plugin/ plugins/<your-plugin-name>/
@@ -34,14 +40,20 @@ cp -r templates/plugin/ plugins/<your-plugin-name>/
 5. Run validation:
 
 ```sh
-./validate.sh
+pnpm run validate
 ```
 
 6. Open a PR.
 
 ## Quick Start: Creating a Standalone Skill
 
-1. Copy the skill template:
+1. Create a new skill interactively:
+
+```sh
+pnpm run scaffold
+```
+
+Or copy the skill template manually:
 
 ```sh
 cp -r templates/skill/ skills/<your-skill-name>/
@@ -52,7 +64,7 @@ cp -r templates/skill/ skills/<your-skill-name>/
 3. Run validation:
 
 ```sh
-./validate.sh
+pnpm run validate
 ```
 
 4. Open a PR.
@@ -90,7 +102,7 @@ description: >
 ---
 ```
 
-The Markdown body contains the skill instructions: persona, steps, output format, and constraints. See `templates/skill/SKILL.md` for the full template.
+The Markdown body contains the skill instructions: persona, steps, output format, and constraints. See `skills/hello-world/SKILL.md` for a complete reference demonstrating every recommended section, or `templates/skill/SKILL.md` for a minimal starting template.
 
 ## Plugin Structure Reference
 
@@ -133,10 +145,10 @@ When writing a skill, always write `SKILL.md` to the standard. Keep skill instru
 
 ## Validation
 
-Run the validation script before submitting a PR:
+Run validation before submitting a PR:
 
 ```sh
-./validate.sh
+pnpm run validate
 ```
 
 This checks:
@@ -146,12 +158,18 @@ This checks:
 - Standalone skill names follow the lowercase-with-hyphens convention
 - Plugin directories contain a `README.md`
 
-CI runs `./validate.sh` automatically on every pull request.
+Run the full quality gate to also check tests, linting, and formatting:
+
+```sh
+pnpm turbo check
+```
+
+CI runs `pnpm turbo check` automatically on every pull request.
 
 ## PR Guidelines
 
 - One plugin or skill per PR — do not bundle unrelated changes
 - Use a descriptive PR title (e.g., "Add code-review plugin" or "Add lint-fix skill")
-- Ensure `./validate.sh` passes before requesting review
+- Ensure `pnpm turbo check` passes before requesting review
 - Update the root `README.md` catalog if applicable
 - Include a brief description of what the plugin/skill does and how to use it
