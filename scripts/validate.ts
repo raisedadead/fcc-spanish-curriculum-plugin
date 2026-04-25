@@ -1,10 +1,18 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, extname, join, parse, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  type FrontmatterValue,
+  getStringField,
+  parseFrontmatterFile,
+  validateDescription,
+  validatePortableName,
+} from "./lib/metadata.js";
 
 const ROOT = resolve(import.meta.dirname ?? dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGINS_DIR = join(ROOT, "plugins");
 const SKILLS_DIR = join(ROOT, "skills");
+const AGENTS_DIR = join(ROOT, "agents");
 
 let total = 0;
 let passed = 0;
@@ -20,37 +28,6 @@ function fail(msg: string): void {
   console.log(`FAIL: ${msg}`);
   total++;
   failed++;
-}
-
-function parseFrontmatter(filePath: string): Record<string, string> {
-  const content = readFileSync(filePath, "utf-8");
-  const lines = content.split("\n");
-  let inFrontmatter = false;
-  let closed = false;
-  const fields: Record<string, string> = {};
-
-  for (const line of lines) {
-    if (line.trim() === "---") {
-      if (inFrontmatter) {
-        closed = true;
-        break;
-      } else {
-        inFrontmatter = true;
-        continue;
-      }
-    }
-    if (inFrontmatter) {
-      const colonIdx = line.indexOf(":");
-      if (colonIdx > 0) {
-        const key = line.substring(0, colonIdx);
-        let value = line.substring(colonIdx + 1).trim();
-        value = value.replace(/^["']/, "").replace(/["']$/, "");
-        fields[key] = value;
-      }
-    }
-  }
-
-  return closed ? fields : {};
 }
 
 function parseJsonFile(file: string): Record<string, unknown> | null {
@@ -70,6 +47,143 @@ function getSubdirs(dir: string): string[] {
     .sort();
 }
 
+function getMarkdownFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter(
+      (entry) => entry.isFile() && extname(entry.name) === ".md" && entry.name !== "README.md",
+    )
+    .map((entry) => entry.name)
+    .sort();
+}
+
+function checkOptionalString(
+  context: string,
+  fields: Record<string, FrontmatterValue>,
+  field: string,
+  maxLength?: number,
+): void {
+  if (!(field in fields)) return;
+
+  const value = getStringField(fields, field);
+  if (value === undefined || value.trim().length === 0) {
+    fail(`${context} '${field}' must be a non-empty string`);
+    return;
+  }
+  if (maxLength !== undefined && value.length > maxLength) {
+    fail(`${context} '${field}' must be ${maxLength} characters or fewer`);
+    return;
+  }
+  pass(`${context} '${field}' is valid`);
+}
+
+function checkMetadata(context: string, fields: Record<string, FrontmatterValue>): void {
+  if (!("metadata" in fields)) return;
+
+  const metadata = fields.metadata;
+  if (typeof metadata === "string") {
+    fail(`${context} 'metadata' must be a mapping`);
+    return;
+  }
+
+  const badEntry = Object.entries(metadata).find(
+    ([key, value]) => key.trim().length === 0 || typeof value !== "string",
+  );
+  if (badEntry) {
+    fail(`${context} 'metadata' keys and values must be strings`);
+  } else {
+    pass(`${context} 'metadata' is valid`);
+  }
+}
+
+function validateMarkdownDefinition(
+  kind: "agent" | "skill",
+  context: string,
+  filePath: string,
+  expectedName: string,
+): void {
+  const parsed = parseFrontmatterFile(filePath);
+
+  if (parsed.errors.length === 0) {
+    pass(`${context} frontmatter is valid`);
+  } else {
+    for (const error of parsed.errors) {
+      fail(`${context} ${error}`);
+    }
+  }
+
+  const nameValue = getStringField(parsed.fields, "name") ?? "";
+  if (nameValue.length > 0) {
+    pass(`${context} has 'name' in frontmatter`);
+  } else {
+    fail(`${context} missing 'name' in frontmatter`);
+  }
+
+  const nameErrors = validatePortableName(nameValue);
+  if (nameErrors.length === 0) {
+    pass(`${context} 'name' is valid`);
+  } else {
+    for (const error of nameErrors) {
+      fail(`${context} 'name' ${error}`);
+    }
+  }
+
+  if (nameValue === expectedName) {
+    pass(`${context} 'name' matches ${kind === "skill" ? "directory" : "filename"}`);
+  } else {
+    fail(
+      `${context} 'name' must match ${kind === "skill" ? "directory" : "filename"} (got: '${nameValue}')`,
+    );
+  }
+
+  const descriptionValue = getStringField(parsed.fields, "description") ?? "";
+  if (descriptionValue.length > 0) {
+    pass(`${context} has 'description' in frontmatter`);
+  } else {
+    fail(`${context} missing 'description' in frontmatter`);
+  }
+
+  const descriptionErrors = validateDescription(descriptionValue);
+  if (descriptionErrors.length === 0) {
+    pass(`${context} 'description' is valid`);
+  } else {
+    for (const error of descriptionErrors) {
+      fail(`${context} 'description' ${error}`);
+    }
+  }
+
+  checkOptionalString(context, parsed.fields, "license");
+  checkOptionalString(context, parsed.fields, "compatibility", 500);
+  checkOptionalString(context, parsed.fields, "allowed-tools");
+  checkMetadata(context, parsed.fields);
+
+  if (parsed.body.length > 0) {
+    pass(`${context} has markdown body`);
+  } else {
+    fail(`${context} missing markdown body`);
+  }
+}
+
+function validateAgentsDir(dir: string, contextPrefix: string): void {
+  const agentFiles = getMarkdownFiles(dir);
+  if (agentFiles.length === 0) return;
+
+  for (const fileName of agentFiles) {
+    const expectedName = parse(fileName).name;
+    const filePath = join(dir, fileName);
+    validateMarkdownDefinition("agent", `${contextPrefix} ${fileName}`, filePath, expectedName);
+  }
+}
+
+function validateSkill(skillMd: string, context: string, expectedName: string): void {
+  if (existsSync(skillMd)) {
+    pass(`${context}/SKILL.md exists`);
+    validateMarkdownDefinition("skill", `${context}/SKILL.md`, skillMd, expectedName);
+  } else {
+    fail(`${context}/SKILL.md does not exist`);
+  }
+}
+
 // Validate plugins/ directory
 if (existsSync(PLUGINS_DIR)) {
   for (const pluginName of getSubdirs(PLUGINS_DIR)) {
@@ -86,11 +200,18 @@ if (existsSync(PLUGINS_DIR)) {
       }
 
       for (const field of ["name", "description", "version"]) {
-        if (data && data[field] != null && data[field] !== "") {
+        if (data && typeof data[field] === "string" && data[field] !== "") {
           pass(`[${pluginName}] plugin.json has '${field}' field`);
         } else {
           fail(`[${pluginName}] plugin.json missing '${field}' field`);
         }
+      }
+
+      const manifestName = typeof data?.name === "string" ? data.name : "";
+      if (manifestName === pluginName) {
+        pass(`[${pluginName}] plugin.json 'name' matches directory`);
+      } else {
+        fail(`[${pluginName}] plugin.json 'name' must match directory (got: '${manifestName}')`);
       }
     } else {
       fail(`[${pluginName}] .claude-plugin/plugin.json does not exist`);
@@ -104,33 +225,9 @@ if (existsSync(PLUGINS_DIR)) {
 
       for (const skillName of getSubdirs(skillsDir)) {
         skillCount++;
-        const skillMd = join(skillsDir, skillName, "SKILL.md");
-
-        if (existsSync(skillMd)) {
-          pass(`[${pluginName}] skills/${skillName}/SKILL.md exists`);
-          const fm = parseFrontmatter(skillMd);
-
-          for (const fmField of ["name", "description"]) {
-            if (fmField in fm) {
-              pass(`[${pluginName}] skills/${skillName}/SKILL.md has '${fmField}' in frontmatter`);
-            } else {
-              fail(
-                `[${pluginName}] skills/${skillName}/SKILL.md missing '${fmField}' in frontmatter`,
-              );
-            }
-          }
-
-          const nameValue = fm["name"] ?? "";
-          if (nameValue && /^[a-z][a-z0-9-]*$/.test(nameValue)) {
-            pass(`[${pluginName}] skills/${skillName}/SKILL.md 'name' is valid (lowercase-hyphen)`);
-          } else {
-            fail(
-              `[${pluginName}] skills/${skillName}/SKILL.md 'name' is not lowercase-hyphen format (got: '${nameValue}')`,
-            );
-          }
-        } else {
-          fail(`[${pluginName}] skills/${skillName}/SKILL.md does not exist`);
-        }
+        const skillDir = join(skillsDir, skillName);
+        validateSkill(join(skillDir, "SKILL.md"), `[${pluginName}] skills/${skillName}`, skillName);
+        validateAgentsDir(join(skillDir, "agents"), `[${pluginName}] skills/${skillName}/agents`);
       }
 
       if (skillCount > 0) {
@@ -141,6 +238,8 @@ if (existsSync(PLUGINS_DIR)) {
     } else {
       fail(`[${pluginName}] skills/ directory does not exist`);
     }
+
+    validateAgentsDir(join(pluginDir, "agents"), `[${pluginName}] agents`);
 
     if (existsSync(join(pluginDir, "README.md"))) {
       pass(`[${pluginName}] README.md exists`);
@@ -153,33 +252,12 @@ if (existsSync(PLUGINS_DIR)) {
 // Validate skills/ directory (standalone skills)
 if (existsSync(SKILLS_DIR)) {
   for (const skillName of getSubdirs(SKILLS_DIR)) {
-    const skillMd = join(SKILLS_DIR, skillName, "SKILL.md");
-
-    if (existsSync(skillMd)) {
-      pass(`[standalone] ${skillName}/SKILL.md exists`);
-      const fm = parseFrontmatter(skillMd);
-
-      for (const fmField of ["name", "description"]) {
-        if (fmField in fm) {
-          pass(`[standalone] ${skillName}/SKILL.md has '${fmField}' in frontmatter`);
-        } else {
-          fail(`[standalone] ${skillName}/SKILL.md missing '${fmField}' in frontmatter`);
-        }
-      }
-
-      const nameValue = fm["name"] ?? "";
-      if (nameValue && /^[a-z][a-z0-9-]*$/.test(nameValue)) {
-        pass(`[standalone] ${skillName}/SKILL.md 'name' is valid (lowercase-hyphen)`);
-      } else {
-        fail(
-          `[standalone] ${skillName}/SKILL.md 'name' is not lowercase-hyphen format (got: '${nameValue}')`,
-        );
-      }
-    } else {
-      fail(`[standalone] ${skillName}/SKILL.md does not exist`);
-    }
+    validateSkill(join(SKILLS_DIR, skillName, "SKILL.md"), `[standalone] ${skillName}`, skillName);
   }
 }
+
+// Validate shared agents.
+validateAgentsDir(AGENTS_DIR, "[agent]");
 
 // Summary
 if (total === 0) {

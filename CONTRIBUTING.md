@@ -4,9 +4,9 @@
 
 Key concepts:
 
-- **Skill** — A portable `SKILL.md` file following the Agent Skills standard. Skills work across Claude Code, Codex CLI, OpenCode, and Gemini CLI.
-- **Plugin** — A Claude Code-specific bundle that wraps one or more skills with hooks, MCP server configs, and static agents.
-- **Agent** — A shared agent definition (in `agents/`) that can be referenced by plugins or used standalone.
+- **Skill** — A portable `SKILL.md` file following the Agent Skills standard. Skills work across Claude Code, Codex CLI, OpenCode, Gemini CLI, and other compatible tools.
+- **Plugin** — A Claude Code-specific bundle that wraps one or more portable skills or agents with hooks, MCP server configs, and Claude plugin metadata.
+- **Agent** — A portable Markdown agent definition with YAML frontmatter (`name`, `description`) and a reusable system prompt body.
 
 ## Development Setup
 
@@ -30,7 +30,7 @@ pnpm install
 | `pnpm run lint`         | Run linter                                          |
 | `pnpm run format`       | Format code                                         |
 | `pnpm run format:check` | Check formatting                                    |
-| `pnpm run scaffold`     | Interactively create a new plugin or skill          |
+| `pnpm run scaffold`     | Interactively create a new plugin, skill, or agent  |
 | `pnpm turbo check`      | Full quality gate (validate + test + lint + format) |
 
 ## Quick Start: Creating a Plugin
@@ -58,7 +58,7 @@ cp -r templates/plugin/ plugins/<your-plugin-name>/
 }
 ```
 
-3. Create skills in `skills/<skill-name>/SKILL.md` inside your plugin directory. Each skill needs YAML frontmatter with `name` and `description`.
+3. Create skills in `skills/<skill-name>/` inside your plugin directory. Each skill needs `SKILL.md` with YAML frontmatter (`name`, `description`).
 
 4. Update your plugin's `README.md` with a description, skill table, installation instructions, and usage examples. See `plugins/spanish-curriculum/README.md` for a complete example.
 
@@ -94,12 +94,39 @@ pnpm run validate
 
 4. Open a PR.
 
+## Quick Start: Creating a Shared Agent
+
+1. Create a new agent interactively:
+
+```sh
+pnpm run scaffold
+```
+
+Or copy the agent template manually:
+
+```sh
+cp templates/agent.md agents/<your-agent-name>.md
+```
+
+2. Edit `agents/<your-agent-name>.md` — update the frontmatter `name` (must match the filename without `.md`) and `description`, then write the Markdown body as the agent's system prompt.
+
+3. Update the root `README.md` catalog and `AGENTS.md` Marketplace Index so the agent is discoverable.
+
+4. Run validation:
+
+```sh
+pnpm run validate
+```
+
+5. Open a PR.
+
 ## Skill Naming Rules
 
 - Lowercase letters, numbers, and hyphens only (e.g., `my-skill-name`)
 - Must match the directory name: `skills/my-skill-name/SKILL.md` must have `name: my-skill-name`
 - Be descriptive — the name is used as the slash command (e.g., `/my-skill-name`)
-- No underscores, spaces, or uppercase letters
+- Use lowercase letters, numbers, and single internal hyphens; start and end
+  with a letter or number.
 
 ## SKILL.md Format
 
@@ -128,6 +155,24 @@ description: >
 ```
 
 The Markdown body contains the skill instructions: persona, steps, output format, and constraints. See `skills/hello-world/SKILL.md` for a complete reference demonstrating every recommended section, or `templates/skill/SKILL.md` for a minimal starting template.
+
+## Agent Format
+
+Every shared agent is a Markdown file with YAML frontmatter and a Markdown body:
+
+```yaml
+---
+name: my-agent
+description: Reviews focused marketplace changes. Use when an agent definition is needed for reusable behavior.
+---
+```
+
+Rules:
+
+- `name` must match the filename without `.md`
+- `description` explains when to delegate to the agent
+- The Markdown body is the reusable system prompt
+- Keep tool-specific fields out of canonical agents unless the portability impact is documented in plugin docs
 
 ## Plugin Structure Reference
 
@@ -164,9 +209,9 @@ See `plugins/spanish-curriculum/` for a complete real-world example.
 - OpenCode
 - Gemini CLI
 
-Rich features — hooks, MCP servers, static agents — are Claude Code-specific and defined at the plugin level. They are not portable.
+Rich features — hooks, MCP servers, plugin manifests, and Claude-specific agent permissions — are defined at the plugin level. They are not portable.
 
-When writing a skill, always write `SKILL.md` to the standard. Keep skill instructions tool-agnostic so they work in any compatible environment.
+When writing a skill, always write `SKILL.md` to the standard. When writing an agent, keep the canonical Markdown prompt tool-agnostic. Put adapter-specific behavior in plugin docs or Claude plugin metadata.
 
 ## Validation
 
@@ -175,14 +220,17 @@ Run `pnpm turbo check` before submitting a PR. This runs the full quality gate: 
 The validator (`pnpm run validate`) checks:
 
 - `plugin.json` exists and has required fields (`name`, `description`, `version`)
-- Every skill has a `SKILL.md` with `name` and `description` in frontmatter
-- Standalone skill names follow the lowercase-with-hyphens convention
+- Every skill has a `SKILL.md` with valid `name` and `description` frontmatter
+- Skill names match their parent directories and follow Agent Skills naming rules
+- Every shared or plugin-local agent has valid `name` and `description` frontmatter
+- Agent names match their filenames and follow the same portable naming rules
 - Plugin directories contain a `README.md`
 
 ## PR Guidelines
 
-- One plugin or skill per PR — do not bundle unrelated changes
+- Keep one plugin, skill, or agent per PR; split unrelated changes into separate
+  PRs.
 - Use a descriptive PR title (e.g., "Add code-review plugin" or "Add lint-fix skill")
 - Ensure `pnpm turbo check` passes before requesting review
-- Update the root `README.md` catalog if applicable
-- Include a brief description of what the plugin/skill does and how to use it
+- Update the root `README.md` catalog and `AGENTS.md` Marketplace Index when adding, moving, deprecating, or removing a plugin, skill, or agent
+- Include a brief description of what the plugin, skill, or agent does and how to use it

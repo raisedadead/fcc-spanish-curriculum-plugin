@@ -25,7 +25,7 @@ Use this skill when the user asks to [describe trigger conditions].
 
 [Describe what the agent should produce — a report, code changes, a summary, etc.]
 
-## What you never do
+## Guardrails
 
-- [Constraint 1]
-- [Constraint 2]
+- Avoid [risky behavior]; instead, [preferred behavior].
+- Avoid [second risky behavior]; instead, [preferred behavior].

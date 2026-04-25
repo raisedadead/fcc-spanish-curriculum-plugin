@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 const ROOT = resolve(import.meta.dirname, "..");
 const PLUGINS_DIR = resolve(ROOT, "plugins");
 const SKILLS_DIR = resolve(ROOT, "skills");
+const AGENTS_DIR = resolve(ROOT, "agents");
 
 const createdPaths: string[] = [];
 
@@ -120,6 +121,23 @@ describe("scaffold CLI — skill creation", () => {
   });
 });
 
+describe("scaffold CLI — agent creation", () => {
+  it("creates shared agent markdown with correct frontmatter", () => {
+    const name = "test-agent-basic";
+    const desc = "A shared test agent";
+    const file = resolve(AGENTS_DIR, `${name}.md`);
+    trackCleanup(file);
+
+    scaffold(`--name ${name} --description "${desc}" --type agent`);
+
+    expect(existsSync(file)).toBe(true);
+    const agentMd = readFileSync(file, "utf-8");
+    expect(agentMd).toMatch(new RegExp(`^name: ${name}$`, "m"));
+    expect(agentMd).toContain(desc);
+    expect(agentMd).not.toContain("agent-name");
+  });
+});
+
 describe("scaffold CLI — error handling", () => {
   it("fails with non-zero exit code for duplicate plugin name", () => {
     const name = "test-dup-plugin";
@@ -138,6 +156,16 @@ describe("scaffold CLI — error handling", () => {
 
     scaffold(`--name ${name} --description "first" --type skill`);
     const result = scaffoldExpectFail(`--name ${name} --description "second" --type skill`);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("fails with non-zero exit code for duplicate agent name", () => {
+    const name = "test-dup-agent";
+    const file = resolve(AGENTS_DIR, `${name}.md`);
+    trackCleanup(file);
+
+    scaffold(`--name ${name} --description "first" --type agent`);
+    const result = scaffoldExpectFail(`--name ${name} --description "second" --type agent`);
     expect(result.status).not.toBe(0);
   });
 

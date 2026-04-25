@@ -22,7 +22,7 @@ You are an agent that [describe the skill's role and persona].
 
 [Describe what the agent should produce — a report, code changes, a summary, etc.]
 
-## What you never do
+## Guardrails
 
-- [Constraint 1 — e.g., never modify files outside scope]
-- [Constraint 2]
+- Avoid [risky behavior]; instead, [preferred behavior].
+- Avoid [second risky behavior]; instead, [preferred behavior].

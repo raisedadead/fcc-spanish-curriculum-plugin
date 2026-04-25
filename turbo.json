@@ -3,10 +3,18 @@
   "tasks": {
     "validate:raw": {
       "inputs": [
+        "AGENTS.md",
+        "README.md",
+        "agents/**/*.md",
         "plugins/**/.claude-plugin/plugin.json",
+        "plugins/*/README.md",
+        "plugins/**/agents/**/*.md",
+        "plugins/**/skills/**/agents/**/*.md",
         "plugins/**/skills/**/SKILL.md",
         "skills/**/SKILL.md",
-        "scripts/validate.ts"
+        "scripts/**/*.ts",
+        "templates/**/*.md",
+        "templates/**/*.json"
       ],
       "cache": false
     },

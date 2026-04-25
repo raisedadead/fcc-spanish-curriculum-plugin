@@ -58,7 +58,8 @@ Section | Subsection / Item | Topic | Example / Notes | Block 1 | Block 2 | Bloc
 - **Subsection / Item** — PCIC section number (e.g., `1.2. El género de los sustantivos`)
 - **Topic** — the specific teachable concept
 - **Example / Notes** — sample language or clarifying notes
-- **Block 1–3** — which curriculum blocks cover this concept (often empty; don't rely on these alone)
+- **Block 1–3** — which curriculum blocks cover this concept; when these are
+  empty, inspect the surrounding concept data before deciding coverage.
 
 ---
 

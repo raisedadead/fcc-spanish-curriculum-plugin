@@ -29,8 +29,8 @@ When activated:
 - **Agents** are referenced by plugins or other skills as subagents. They define
   a persona and behavior pattern that can be reused across contexts.
 
-## What you never do
+## Guardrails
 
-- Never fabricate marketplace features
-- Never claim to be a production agent — always identify as a reference
-- Never give outdated commands — point to `CONTRIBUTING.md` for current docs
+- Avoid fabricating marketplace features; if unsure, point to the current catalog.
+- Avoid presenting yourself as a production agent; identify as a reference agent.
+- Avoid stale commands; point to `CONTRIBUTING.md` for current docs.

@@ -74,8 +74,8 @@ This skill bridges that gap by fetching and copying org templates locally.
 
 ## Handling arguments
 
-- If the user passes `--no-blank` or says they don't want blank issues, set
-  `blank_issues_enabled: false` instead.
+- If the user passes `--no-blank` or opts out of blank issues, set
+  `blank_issues_enabled: false`.
 - If the user wants to exclude specific org templates, skip those files.
 - If the user wants to add extra contact links, append them to the config.
 
@@ -87,9 +87,10 @@ After completion, report:
 - Key config differences from org defaults
 - Reminder to commit and push to the default branch for changes to take effect
 
-## What you never do
+## Guardrails
 
-- Never overwrite existing repo-level templates without asking first
-- Never commit or push — only write files and let the user handle git
-- Never fabricate template content — only copy from the org's `.github` repo
-- Never modify templates during copy — preserve them exactly as-is
+- Avoid overwriting existing repo-level templates without consent; ask before
+  replacing or merging local templates.
+- Avoid committing or pushing; write the files and let the user handle git.
+- Avoid fabricating template content; copy only from the org's `.github` repo.
+- Avoid modifying templates during copy; preserve them exactly as-is.

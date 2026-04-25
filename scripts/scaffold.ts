@@ -9,19 +9,20 @@ import {
   renameSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
+import { validatePortableName, validateScaffoldDescription } from "./lib/metadata.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const TEMPLATES_DIR = join(ROOT, "templates");
 const PLUGINS_DIR = join(ROOT, "plugins");
 const SKILLS_DIR = join(ROOT, "skills");
+const AGENTS_DIR = join(ROOT, "agents");
 
-const NAME_RE = /^[a-z][a-z0-9-]*$/;
-const YAML_SEPARATOR_RE = /^---$/m;
+type ScaffoldType = "plugin" | "skill" | "agent";
 
 interface ScaffoldOptions {
   name: string;
   description: string;
-  type: "plugin" | "skill";
+  type: ScaffoldType;
 }
 
 function parseArgs(argv: string[]): Partial<ScaffoldOptions> {
@@ -33,7 +34,7 @@ function parseArgs(argv: string[]): Partial<ScaffoldOptions> {
       opts.description = argv[++i];
     } else if (argv[i] === "--type" && argv[i + 1]) {
       const val = argv[++i];
-      if (val === "plugin" || val === "skill") {
+      if (val === "plugin" || val === "skill" || val === "agent") {
         opts.type = val;
       }
     }
@@ -45,28 +46,35 @@ function validateName(value: string | undefined): string | undefined {
   if (!value || value.trim().length === 0) {
     return "Name is required.";
   }
-  if (!NAME_RE.test(value)) {
-    return "Name must be lowercase letters, numbers, and hyphens, starting with a letter.";
+  const errors = validatePortableName(value);
+  if (errors.length > 0) {
+    return errors.join(". ") + ".";
   }
   return undefined;
 }
 
 function validateDescription(value: string | undefined): string | undefined {
-  if (!value || value.trim().length === 0) {
-    return "Description is required.";
-  }
-  if (YAML_SEPARATOR_RE.test(value)) {
-    return "Description must not contain YAML document separators (---).";
+  return validateScaffoldDescription(value);
+}
+
+function checkNameExists(name: string, type: ScaffoldType): string | undefined {
+  const targetPath = getTargetPath(name, type);
+  if (existsSync(targetPath)) {
+    return `${getTypeLabel(type)} "${name}" already exists at ${targetPath}`;
   }
   return undefined;
 }
 
-function checkNameExists(name: string, type: "plugin" | "skill"): string | undefined {
-  const targetDir = type === "plugin" ? join(PLUGINS_DIR, name) : join(SKILLS_DIR, name);
-  if (existsSync(targetDir)) {
-    return `${type === "plugin" ? "Plugin" : "Skill"} "${name}" already exists at ${targetDir}`;
-  }
-  return undefined;
+function getTargetPath(name: string, type: ScaffoldType): string {
+  if (type === "plugin") return join(PLUGINS_DIR, name);
+  if (type === "skill") return join(SKILLS_DIR, name);
+  return join(AGENTS_DIR, `${name}.md`);
+}
+
+function getTypeLabel(type: ScaffoldType): string {
+  if (type === "plugin") return "Plugin";
+  if (type === "skill") return "Skill";
+  return "Agent";
 }
 
 function copyDirSync(src: string, dest: string): void {
@@ -81,6 +89,19 @@ function copyDirSync(src: string, dest: string): void {
       copyFileSync(srcPath, destPath);
     }
   }
+}
+
+function formatBlock(value: string, indent = "  "): string {
+  return value
+    .split(/\r?\n/)
+    .map((line) => `${indent}${line}`)
+    .join("\n");
+}
+
+function replaceFrontmatter(content: string, name: string, description: string): string {
+  return content
+    .replace(/^name: [a-z0-9-]+$/m, `name: ${name}`)
+    .replace(/^description: >[\s\S]*?(?=^---)/m, `description: >\n${formatBlock(description)}\n`);
 }
 
 function scaffoldPlugin(name: string, description: string): void {
@@ -102,11 +123,7 @@ function scaffoldPlugin(name: string, description: string): void {
 
   const skillMdPath = join(newSkillDir, "SKILL.md");
   let skillMd = readFileSync(skillMdPath, "utf-8");
-  skillMd = skillMd.replace(/^name: example-skill$/m, `name: ${name}`);
-  skillMd = skillMd.replace(
-    /^description: >[\s\S]*?(?=^---)/m,
-    `description: >\n  ${description}\n`,
-  );
+  skillMd = replaceFrontmatter(skillMd, name, description);
   writeFileSync(skillMdPath, skillMd);
 
   const readmePath = join(targetDir, "README.md");
@@ -128,16 +145,23 @@ function scaffoldSkill(name: string, description: string): void {
 
   const skillMdPath = join(targetDir, "SKILL.md");
   let skillMd = readFileSync(skillMdPath, "utf-8");
-  skillMd = skillMd.replace(/^name: skill-name$/m, `name: ${name}`);
-  skillMd = skillMd.replace(
-    /^description: >[\s\S]*?(?=^---)/m,
-    `description: >\n  ${description}\n`,
-  );
+  skillMd = replaceFrontmatter(skillMd, name, description);
   writeFileSync(skillMdPath, skillMd);
 }
 
+function scaffoldAgent(name: string, description: string): void {
+  mkdirSync(AGENTS_DIR, { recursive: true });
+  const templatePath = join(TEMPLATES_DIR, "agent.md");
+  const targetPath = join(AGENTS_DIR, `${name}.md`);
+
+  let agentMd = readFileSync(templatePath, "utf-8");
+  agentMd = replaceFrontmatter(agentMd, name, description);
+  agentMd = agentMd.replace(/^# Agent Name$/m, `# ${name}`);
+  writeFileSync(targetPath, agentMd);
+}
+
 async function runInteractive(partial: Partial<ScaffoldOptions>): Promise<ScaffoldOptions> {
-  p.intro("Scaffold a new plugin or skill");
+  p.intro("Scaffold a new plugin, skill, or agent");
 
   const type =
     partial.type ??
@@ -147,6 +171,7 @@ async function runInteractive(partial: Partial<ScaffoldOptions>): Promise<Scaffo
         options: [
           { value: "plugin" as const, label: "Plugin" },
           { value: "skill" as const, label: "Standalone Skill" },
+          { value: "agent" as const, label: "Shared Agent" },
         ],
       });
       if (p.isCancel(result)) {
@@ -246,23 +271,22 @@ async function main(): Promise<void> {
 
   const opts = isNonInteractive ? runNonInteractive(args) : await runInteractive(args);
 
-  if (opts.type === "plugin") {
-    scaffoldPlugin(opts.name, opts.description);
-    const msg = `Plugin created at plugins/${opts.name}/. Run pnpm run validate to verify.`;
-    if (isNonInteractive) {
-      console.log(msg);
-    } else {
-      p.outro(msg);
-    }
+  if (opts.type === "plugin") scaffoldPlugin(opts.name, opts.description);
+  if (opts.type === "skill") scaffoldSkill(opts.name, opts.description);
+  if (opts.type === "agent") scaffoldAgent(opts.name, opts.description);
+
+  const msg = `${getTypeLabel(opts.type)} created at ${relativeTargetPath(opts.name, opts.type)}. Run pnpm run validate to verify.`;
+  if (isNonInteractive) {
+    console.log(msg);
   } else {
-    scaffoldSkill(opts.name, opts.description);
-    const msg = `Skill created at skills/${opts.name}/. Run pnpm run validate to verify.`;
-    if (isNonInteractive) {
-      console.log(msg);
-    } else {
-      p.outro(msg);
-    }
+    p.outro(msg);
   }
+}
+
+function relativeTargetPath(name: string, type: ScaffoldType): string {
+  if (type === "plugin") return `plugins/${name}/`;
+  if (type === "skill") return `skills/${name}/`;
+  return `agents/${name}.md`;
 }
 
 main().catch((err) => {

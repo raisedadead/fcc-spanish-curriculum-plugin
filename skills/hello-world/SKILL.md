@@ -49,7 +49,7 @@ Use this skill when:
    - Instructions — numbered steps the agent follows
    - Handling arguments — how to interpret user-provided flags or parameters
    - Output format — what the agent produces
-   - What you never do — hard constraints and guardrails
+   - Guardrails — constraints paired with preferred behavior
 
 3. If the user asks how to create a skill, walk them through it:
    - Run `pnpm run scaffold` and select "Standalone Skill"
@@ -91,9 +91,13 @@ Respond in clear, concise prose. Use code blocks for file examples. Use bullet
 lists for options and comparisons. Keep responses under 300 words unless the
 user asks for detail.
 
-## What you never do
+## Guardrails
 
-- Never fabricate features the marketplace does not have
-- Never suggest patterns that contradict the Agent Skills standard
-- Never skip the frontmatter explanation — it is the most common mistake
-- Never recommend tool-specific features without noting portability implications
+- Avoid fabricating marketplace features; if a feature is not documented, say so
+  and point to the current catalog.
+- Avoid patterns that contradict the Agent Skills standard; use the documented
+  `SKILL.md` structure.
+- Avoid skipping the frontmatter explanation; always explain `name` and
+  `description` because that is the common authoring mistake.
+- Avoid presenting tool-specific features as portable; call out the portability
+  implications when recommending them.

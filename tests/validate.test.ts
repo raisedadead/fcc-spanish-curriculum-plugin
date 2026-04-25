@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, copyFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, copyFileSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { tmpdir } from "node:os";
 
 const VALIDATE_SCRIPT = join(import.meta.dirname, "..", "scripts", "validate.ts");
+const VALIDATE_LIB = join(import.meta.dirname, "..", "scripts", "lib");
 
 let tempDir: string;
 
@@ -13,6 +14,7 @@ function setupTempDir(): string {
   const scriptsDir = join(dir, "scripts");
   mkdirSync(scriptsDir, { recursive: true });
   copyFileSync(VALIDATE_SCRIPT, join(scriptsDir, "validate.ts"));
+  cpSync(VALIDATE_LIB, join(scriptsDir, "lib"), { recursive: true });
   return dir;
 }
 
@@ -69,10 +71,9 @@ function createPlugin(
     };
 
     for (const [skillName, content] of Object.entries(skills)) {
-      if (content === false) continue;
       const skillDir = join(skillsDir, skillName);
       mkdirSync(skillDir, { recursive: true });
-      if (content !== undefined) {
+      if (content !== false && content !== undefined) {
         writeFileSync(join(skillDir, "SKILL.md"), content);
       }
     }
@@ -88,6 +89,14 @@ function createStandaloneSkill(base: string, name: string, content: string | fal
   mkdirSync(skillDir, { recursive: true });
   if (content !== false) {
     writeFileSync(join(skillDir, "SKILL.md"), content);
+  }
+}
+
+function createAgent(base: string, name: string, content: string | false): void {
+  const agentsDir = join(base, "agents");
+  mkdirSync(agentsDir, { recursive: true });
+  if (content !== false) {
+    writeFileSync(join(agentsDir, `${name}.md`), content);
   }
 }
 
@@ -114,6 +123,25 @@ describe("validate.ts", () => {
         tempDir,
         "test-skill",
         ["---", "name: test-skill", "description: A test skill", "---", "# Test"].join("\n"),
+      );
+      const { stdout, exitCode } = runValidator(tempDir);
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain("PASS");
+      expect(stdout).not.toContain("FAIL");
+    });
+
+    it("valid shared agent with frontmatter passes", () => {
+      createAgent(
+        tempDir,
+        "test-agent",
+        [
+          "---",
+          "name: test-agent",
+          "description: Reviews focused marketplace tasks",
+          "---",
+          "# Test Agent",
+          "Follow the requested instructions.",
+        ].join("\n"),
       );
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(0);
@@ -202,7 +230,7 @@ describe("validate.ts", () => {
       expect(stdout).toContain("FAIL");
     });
 
-    it("SKILL.md name not lowercase-hyphen fails", () => {
+    it("SKILL.md name with non-portable characters fails", () => {
       createPlugin(tempDir, "bad-name-fmt", {
         skills: {
           "my-skill": ["---", "name: My_Skill", "description: A test", "---", "# Skill"].join("\n"),
@@ -211,7 +239,7 @@ describe("validate.ts", () => {
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(1);
       expect(stdout).toContain("FAIL");
-      expect(stdout).toContain("not lowercase-hyphen format");
+      expect(stdout).toContain("must use lowercase letters");
     });
 
     it("missing README.md fails", () => {
@@ -243,7 +271,7 @@ describe("validate.ts", () => {
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(1);
       expect(stdout).toContain("FAIL");
-      expect(stdout).toContain("not lowercase-hyphen format");
+      expect(stdout).toContain("name is required");
     });
 
     it("name format invalid fails", () => {
@@ -255,7 +283,38 @@ describe("validate.ts", () => {
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(1);
       expect(stdout).toContain("FAIL");
-      expect(stdout).toContain("not lowercase-hyphen format");
+      expect(stdout).toContain("must use lowercase letters");
+    });
+
+    it("name must match standalone skill directory", () => {
+      createStandaloneSkill(
+        tempDir,
+        "directory-name",
+        ["---", "name: other-name", "description: Test", "---", "# Skill"].join("\n"),
+      );
+      const { stdout, exitCode } = runValidator(tempDir);
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain("name' must match directory");
+    });
+  });
+
+  describe("agent failures", () => {
+    it("agent without frontmatter fails", () => {
+      createAgent(tempDir, "plain-agent", "# Plain Agent\nNo metadata.");
+      const { stdout, exitCode } = runValidator(tempDir);
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain("frontmatter must start with ---");
+    });
+
+    it("agent name must match filename", () => {
+      createAgent(
+        tempDir,
+        "file-name",
+        ["---", "name: other-name", "description: Test", "---", "# Agent"].join("\n"),
+      );
+      const { stdout, exitCode } = runValidator(tempDir);
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain("name' must match filename");
     });
   });
 
@@ -272,24 +331,24 @@ describe("validate.ts", () => {
       createStandaloneSkill(
         tempDir,
         "quoted-name",
-        ["---", 'name: "my-skill"', "description: Test", "---", "# Skill"].join("\n"),
+        ["---", 'name: "quoted-name"', "description: Test", "---", "# Skill"].join("\n"),
       );
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(0);
       expect(stdout).toContain("PASS");
-      expect(stdout).toContain("'name' is valid (lowercase-hyphen)");
+      expect(stdout).toContain("'name' is valid");
     });
 
     it("YAML value with single quotes is stripped correctly", () => {
       createStandaloneSkill(
         tempDir,
         "single-quoted",
-        ["---", "name: 'another-skill'", "description: Test", "---", "# Skill"].join("\n"),
+        ["---", "name: 'single-quoted'", "description: Test", "---", "# Skill"].join("\n"),
       );
       const { stdout, exitCode } = runValidator(tempDir);
       expect(exitCode).toBe(0);
       expect(stdout).toContain("PASS");
-      expect(stdout).toContain("'name' is valid (lowercase-hyphen)");
+      expect(stdout).toContain("'name' is valid");
     });
 
     it("no plugins/ or skills/ directories at all exits with code 1", () => {

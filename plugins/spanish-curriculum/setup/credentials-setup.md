@@ -41,7 +41,8 @@ One person on the team creates the service account and shares the credentials wi
 Send the `curriculum-credentials.json` file to each team member via a secure
 channel (Slack DM, encrypted email, 1Password shared vault, etc.).
 
-**Never commit this file to Git.**
+**Keep this file out of Git.** Store it only in the agreed secure channel or
+local environment setup.
 
 ---
 

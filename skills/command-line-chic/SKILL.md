@@ -70,7 +70,8 @@ contrast.
 ### 4. Restrained accents with clear purpose
 
 Five accent hues (purple, yellow, blue, green, red) each serve a specific
-semantic role. Never use accents decoratively. Each color carries meaning:
+semantic role. Use accents to communicate state or type; when color is not
+semantic, keep it in the neutral surface system. Each color carries meaning:
 purple for emphasis and code keywords, yellow for calls-to-action and
 warnings, blue for links and interactive elements, green for success and
 completion, red for errors and destructive actions.
@@ -147,7 +148,7 @@ reference `--primary-background`, not `#0a0a23`.
 | ------------- | ------------------------------------------------------- | -------------------------------- |
 | Code / mono   | Hack-ZeroSlash                                          | Primary monospace. Slashed zero. |
 | Body / prose  | Lato                                                    | Weights: 300, 400, 700 + italics |
-| Logo only     | SaxMono                                                 | Never use outside logo context   |
+| Logo only     | SaxMono                                                 | Use only in logo context         |
 | Fallback mono | Fira Mono, Menlo, Consolas, monospace                   |                                  |
 | Fallback sans | -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif |                                  |
 
@@ -187,8 +188,8 @@ reference `--primary-background`, not `#0a0a23`.
 - Background: one level up from the page surface (gray-80 on gray-85, or
   gray-85 on gray-90).
 - Subtle border using the next gray step (gray-75 in dark mode).
-- No drop shadows in dark mode — depth comes from background luminance
-  differences. Light mode may use subtle shadows sparingly.
+- In dark mode, create depth with background luminance differences. Light mode
+  may use subtle shadows sparingly.
 
 ### Navigation
 
@@ -221,7 +222,7 @@ reference `--primary-background`, not `#0a0a23`.
 - **Single-column** for focused tasks (coding, reading, forms).
 - **Multi-column** for dashboards and data-heavy views.
 - **Responsive breakpoints**: 500px, 700px, 1000px, 1200px.
-- **Padding**: Generous whitespace. Don't crowd elements.
+- **Padding**: Generous whitespace. Give elements room to breathe.
 - **Z-index discipline**: Breadcrumbs 100, Flash messages 150, Header 200.
 
 ## Accessibility
@@ -233,7 +234,7 @@ These are not optional extras — they are load-bearing design requirements:
 - **Focus-visible** outlines on all interactive elements (blue-mid `#198eee`).
 - **Screen reader support**: `.sr-only` class for visually hidden labels.
 - **Keyboard navigation**: Every interactive element reachable and operable.
-- **No color-only signaling**: Pair color with icons, text, or patterns.
+- **Accessible signaling**: Pair color with icons, text, or patterns.
 
 ## Applying to Any Framework
 
@@ -267,18 +268,22 @@ The VS Code theme and Sandpack theme both demonstrate this mapping. See
 `references/syntax-theme.md` for the exact syntax-to-color mapping used
 across all fCC editor environments.
 
-## What you never do
+## Guardrails
 
-- Never use pure black (`#000000`) as a background — always use the navy
-  grays starting from `#0a0a23`.
-- Never drop below 18px font size for any readable text.
-- Never use accent colors decoratively without semantic meaning.
-- Never design light-mode-only — always provide the dark mode path.
-- Never hardcode hex values in components — always use semantic tokens.
-- Never use drop shadows as the primary depth mechanism in dark mode.
-- Never ignore keyboard focus states.
-- Never mix fonts from outside the type stack (Hack, Lato, system fallbacks)
-  without explicit approval.
+- Avoid pure black (`#000000`) as a background; use the navy grays starting from
+  `#0a0a23`.
+- Avoid readable text below 18px; use 18px or larger for body-sized content.
+- Avoid decorative accent colors; use accents only when they communicate a
+  semantic role.
+- Avoid light-mode-only designs; provide the dark mode path with equivalent
+  contrast and states.
+- Avoid hardcoded hex values in components; use semantic tokens.
+- Avoid drop shadows as the primary depth mechanism in dark mode; use luminance,
+  borders, and spacing.
+- Avoid missing keyboard focus states; provide visible focus styles for every
+  interactive element.
+- Avoid fonts outside Hack, Lato, and system fallbacks; use the approved type
+  stack unless explicitly approved otherwise.
 
 ## Reference Files
 

@@ -6,11 +6,11 @@ A multi-agent pipeline for building the Professional Spanish course across CEFR 
 
 ## What's inside
 
-| Agent                 | Command       | Role                                                                                                                                             |
-| --------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Dra. Carmen Vidal** | `/carmen`     | Researcher & planner — reads the Google Sheets planning spreadsheet, maps PCIC concepts, writes detailed task sequences with `—carmen` signature |
-| **Marcos Ibáñez**     | `/marcos`     | Task creator — reads Carmen's plan from Google Sheets and writes `.md` task files directly into a cloned Git repo on a feature branch            |
-| **Curriculum**        | `/curriculum` | Orchestrator — runs Carmen → Marcos in sequence with a review checkpoint in between                                                              |
+| Skill                            | Command       | Role                                                                                                                                             |
+| -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [carmen](skills/carmen/)         | `/carmen`     | Researcher & planner — reads the Google Sheets planning spreadsheet, maps PCIC concepts, writes detailed task sequences with `—carmen` signature |
+| [marcos](skills/marcos/)         | `/marcos`     | Task creator — reads Carmen's plan from Google Sheets and writes `.md` task files directly into a cloned Git repo on a feature branch            |
+| [curriculum](skills/curriculum/) | `/curriculum` | Orchestrator — runs Carmen → Marcos in sequence with a review checkpoint in between                                                              |
 
 Plus a **task validation hook** that automatically checks every `.md` file Marcos writes for structural correctness.
 
@@ -96,7 +96,7 @@ When updating a cell that already has team-written content, Carmen appends a sug
 > _Suggested task sequence: ..._
 > _—carmen_
 
-Carmen never writes to the sheet without being asked.
+Carmen writes to the sheet only after an explicit request.
 
 ---
 
@@ -149,4 +149,10 @@ Carmen works across all levels. When starting a new level, tell Carmen which lev
 
 ## Updating the plugin
 
-Skill files live in `skills/carmen/SKILL.md`, `skills/marcos/SKILL.md`, and `skills/curriculum/SKILL.md`. Edit them to refine agent behavior, then repackage and redistribute the zip.
+Skill instructions live in:
+
+- `skills/carmen/SKILL.md` — planning and refinement workflow
+- `skills/marcos/SKILL.md` — task creation workflow
+- `skills/curriculum/SKILL.md` — end-to-end orchestration workflow
+
+Carmen's specialist agents live in `skills/carmen/agents/`. Update the root marketplace catalog and `AGENTS.md` index whenever plugin contents change.

@@ -39,16 +39,16 @@ Within each block type, the **purpose** of the description differs:
 
 ## Correct Answer Rule
 
-**The correct answer never has a `### --feedback--` block under it.**
-Wrong answers always do.
+**Correct answers omit `### --feedback--`; wrong answers include it.**
 
-Do **not** add any comment to the correct answer line. The absence of a `### --feedback--` block is the only signal needed.
+Keep the correct answer line clean. The absence of a `### --feedback--` block is
+the only signal needed.
 
 ---
 
 ## Formatting Rules
 
-**No `→` arrows.** Use a dash `-` instead in all explanations and conjugation pairs.
+**Dash separators.** Use a dash `-` in all explanations and conjugation pairs.
 
 - ✅ `desarrollar` - `desarrolla` (to develop - develops)
 - ❌ `desarrollar` → `desarrolla`
@@ -90,7 +90,7 @@ Any Spanish word, phrase, fragment, or full sentence must be wrapped in backtick
 - ✅ `La empresa crea productos digitales.`
 - ❌ La empresa crea productos digitales.
 
-**Rule 2 — English content never gets backticks.**
+**Rule 2 — English content stays outside backticks.**
 Plain English prose, English answer options, and English labels stay outside backticks.
 
 - ✅ A technology company.

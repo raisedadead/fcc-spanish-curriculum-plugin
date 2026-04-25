@@ -22,7 +22,7 @@ and review tasks before they go into the freeCodeCamp repo.
 ```
 
 **Chapter Name** and **Module Name** come directly from Carmen's Module Brief.
-Use the exact names as written — don't abbreviate, slug-ify, or rephrase them.
+Use the exact names as written. Keep chapter and module names unchanged.
 
 ---
 
